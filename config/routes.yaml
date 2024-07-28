@@ -1,5 +1,6 @@
-controllers:
-    resource:
-        path: ../src/Controller/
-        namespace: App\Controller
-    type: attribute
+app.content:
+  path: /{path}
+  controller: 'App\Controller\ContentController'
+  methods: GET
+  requirements:
+    path: '.*'

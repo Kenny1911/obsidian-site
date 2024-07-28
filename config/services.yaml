@@ -6,19 +6,31 @@
 parameters:
 
 services:
-    # default configuration for services in *this* file
-    _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+  App\Obsidian\Markdown\SymfonyRouterObsidianLinkUrlGenerator:
+    arguments:
+      - '@router'
+      - 'app.content'
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
-    App\:
-        resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
-            - '../src/Kernel.php'
+  App\Obsidian\Markdown\ObsidianLinkUrlGenerator:
+    alias: 'App\Obsidian\Markdown\SymfonyRouterObsidianLinkUrlGenerator'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+  App\Obsidian\Markdown\ObsidianMarkdown:
+    arguments:
+      - '@App\Obsidian\Markdown\ObsidianLinkUrlGenerator'
+
+  cebe\markdown\Parser:
+    alias: 'App\Obsidian\Markdown\ObsidianMarkdown'
+
+  app.markdown_parser:
+    alias: 'cebe\markdown\Parser'
+
+  App\Controller\ContentController:
+    arguments:
+      - '%env(CONTENT_DIR)%'
+      - '%env(CONTENT_INDEX)%'
+      - '@app.markdown_parser'
+      - '@router'
+      - - '/.obsidian'
+        - '/commit'
+    autoconfigure: true
+    public: true
