@@ -1,0 +1,57 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.content-page {
+    display: flex;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    margin: 0;
+    color: var(--fgColor-default);
+    background-color: var(--bgColor-default);
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.content-page .content-page__files-list {
+    width: 100%;
+    max-width: 350px;
+    background-color: #fbfbfb;
+    border-right: 1px solid #d1d1d1;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.content-page .content-page__article {
+    width: 100%;
+    max-width: 700px;
+    padding: 15px;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+.files-list {
+    padding: 0;
+    list-style: none;
+}
+
+.files-list .files-list__item {
+    position: relative;
+    padding-left: 10px;
+}
+
+.files-list .files-list__item > a {
+    color: var(--fgColor-default);
+    text-decoration: none;
+}
+
+.files-list .files-list__item.files-list__item--directory > .files-list {
+    display: none;
+}
+
+.files-list .files-list__item.files-list__item--directory.files-list__item--directory-open > .files-list {
+    display: block;
+}
