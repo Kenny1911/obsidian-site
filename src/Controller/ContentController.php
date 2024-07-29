@@ -9,10 +9,13 @@ use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 final class ContentController
 {
@@ -23,18 +26,32 @@ final class ContentController
     private readonly Parser $markdownParser;
 
     private readonly UrlGeneratorInterface $urlGenerator;
-    
+
+    private readonly Environment $twig;
+
     private readonly array $excludePaths;
 
-    public function __construct(string $contentBasePath, string $contentIndex, Parser $markdownParser, UrlGeneratorInterface $urlGenerator, array $excludePaths = [])
-    {
+    public function __construct(
+        string $contentBasePath,
+        string $contentIndex,
+        Parser $markdownParser,
+        UrlGeneratorInterface $urlGenerator,
+        Environment $twig,
+        array $excludePaths = [],
+    ) {
         $this->contentBasePath = rtrim(trim($contentBasePath), '/');
         $this->contentIndex = $contentIndex;
         $this->markdownParser = $markdownParser;
         $this->urlGenerator = $urlGenerator;
+        $this->twig = $twig;
         $this->excludePaths = array_map([self::class, 'normalizePath'], $excludePaths);
     }
 
+    /**
+     * @throws SyntaxError
+     * @throws RuntimeError
+     * @throws LoaderError
+     */
     public function __invoke(string $path): Response
     {
         $path = self::normalizePath($path);
@@ -71,7 +88,15 @@ final class ContentController
         }
 
         if (self::isMarkdown($filePath)) {
-            return new Response($this->markdownParser->parse(file_get_contents($filePath)));
+            return new Response(
+                $this->twig->render(
+                    'content.html.twig',
+                    [
+                        'title' => pathinfo($filePath)['filename'] ?? null,
+                        'content' => $this->markdownParser->parse(file_get_contents($filePath))
+                    ]
+                )
+            );
         }
 
         return new BinaryFileResponse($filePath);
