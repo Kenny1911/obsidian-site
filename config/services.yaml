@@ -30,6 +30,7 @@ services:
       - '%env(CONTENT_INDEX)%'
       - '@app.markdown_parser'
       - '@router'
+      - '@twig'
       - - '/.obsidian'
         - '/commit'
     autoconfigure: true
