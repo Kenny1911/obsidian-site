@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\File\FileType\FileType;
+use App\File\FileUtil;
+use App\Routing\UrlGenerator;
 use cebe\markdown\Parser;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -19,32 +19,36 @@ use Twig\Error\SyntaxError;
 
 final class ContentController
 {
-    private readonly string $contentBasePath;
+    private readonly FileUtil $fileUtil;
 
-    private readonly string $contentIndex;
+    private readonly UrlGenerator $urlGenerator;
 
     private readonly Parser $markdownParser;
 
-    private readonly UrlGeneratorInterface $urlGenerator;
-
     private readonly Environment $twig;
 
-    private readonly array $excludePaths;
+    private readonly string $indexPath;
 
+    /** @var list<string> */
+    private readonly array $markdownExtensions;
+
+    /**
+     * @param array<string> $markdownExtensions
+     */
     public function __construct(
-        string $contentBasePath,
-        string $contentIndex,
+        FileUtil $fileUtil,
+        UrlGenerator $urlGenerator,
         Parser $markdownParser,
-        UrlGeneratorInterface $urlGenerator,
         Environment $twig,
-        array $excludePaths = [],
+        string $indexPath,
+        array $markdownExtensions = ['md'],
     ) {
-        $this->contentBasePath = rtrim(trim($contentBasePath), '/');
-        $this->contentIndex = $contentIndex;
-        $this->markdownParser = $markdownParser;
+        $this->fileUtil = $fileUtil;
         $this->urlGenerator = $urlGenerator;
+        $this->markdownParser = $markdownParser;
         $this->twig = $twig;
-        $this->excludePaths = array_map([self::class, 'normalizePath'], $excludePaths);
+        $this->indexPath = $this->fileUtil->normalizePath($indexPath);
+        $this->markdownExtensions = array_values(array_filter($markdownExtensions));
     }
 
     /**
@@ -54,61 +58,63 @@ final class ContentController
      */
     public function __invoke(string $path): Response
     {
-        $path = self::normalizePath($path);
+        $path = $this->fileUtil->normalizePath($path);
 
+        // Redirect to index, if path not set
         if ('' === $path) {
-            return new RedirectResponse($this->urlGenerator->generate('app.content', ['path' => $this->contentIndex]));
+            return new RedirectResponse($this->urlGenerator->generate($this->indexPath));
         }
 
-        foreach ($this->excludePaths as $excludePath) {
-            if ($path === $excludePath || str_starts_with($path, $excludePath.'/')) {
-                throw new NotFoundHttpException('Not found');
-            }
-        }
+        // Search file
+        $file = $this->fileUtil->getFile($path)
+            // Search file without ext
+            ?? $this->fileUtil->getFirstResult(
+                $this->fileUtil->createFinder()
+                    ->path($this->fileUtil->dirname($path))
+                    ->name(
+                        array_map(
+                            fn(string $ext): string => $this->fileUtil->filename($path).'.'.$ext,
+                            $this->markdownExtensions
+                        )
+                    )
+            )
+            // Search file by name in root dir
+            ?? $this->fileUtil->getFirstResult($this->fileUtil->createFinder()->name($path))
+            // Search file by name without ext in root
+            ?? $this->fileUtil->getFirstResult(
+                $this->fileUtil->createFinder()
+                    ->name(
+                        array_map(
+                            fn(string $ext): string => $path.'.'.$ext,
+                            $this->markdownExtensions
+                        )
+                    )
+            )
+        ;
 
-        $filePath = $this->contentBasePath.'/'.$path; // Absolute path to file
-
-        if (!file_exists($filePath)) {
-            if (file_exists($filePath.'.md')) {
-                return new RedirectResponse($this->urlGenerator->generate('app.content', ['path' => $path.'.md']));
-            }
-
-            if (!str_contains('/', $path)) {
-                $finder = (new Finder())->in($this->contentBasePath)->name([$path, $path.'.md']);
-
-                if (1 === count($finder)) {
-                    /** @var SplFileInfo $file */
-                    foreach ($finder as $file) {
-                        return new RedirectResponse($this->urlGenerator->generate('app.content', ['path' => $file->getRelativePathname()]));
-                    }
-                }
-            }
-
+        if (!$file || !$file->isFile()) {
             throw new NotFoundHttpException('Not found');
         }
 
-        if (self::isMarkdown($filePath)) {
+        // Redirect to original file
+        if ($file->getRelativePathname() !== $path) {
+            return new RedirectResponse($this->urlGenerator->generate($file->getRelativePathname()));
+        }
+
+        $fileType = $this->fileUtil->getFileType($file);
+
+        if (FileType::MARKDOWN === $fileType) {
             return new Response(
                 $this->twig->render(
                     'content.html.twig',
                     [
-                        'title' => pathinfo($filePath)['filename'] ?? null,
-                        'content' => $this->markdownParser->parse(file_get_contents($filePath))
+                        'title' => $file->getFilename(),
+                        'content' => $this->markdownParser->parse($file->getContents()),
                     ]
                 )
             );
         }
 
-        return new BinaryFileResponse($filePath);
-    }
-
-    private static function normalizePath(string $path): string
-    {
-        return trim($path, " \n\r\t\v\0/");
-    }
-
-    private static function isMarkdown(string $path): bool
-    {
-        return str_ends_with($path, '.md');
+        return new BinaryFileResponse($file->getPath());
     }
 }
