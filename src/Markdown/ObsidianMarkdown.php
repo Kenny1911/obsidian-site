@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Obsidian\Markdown;
+namespace App\Markdown;
 
+use App\Routing\UrlGenerator;
 use cebe\markdown\Markdown;
 
 /**
@@ -11,12 +12,9 @@ use cebe\markdown\Markdown;
  */
 final class ObsidianMarkdown extends Markdown
 {
-    private readonly ObsidianLinkUrlGenerator $urlGenerator;
+    private readonly UrlGenerator $urlGenerator;
 
-    /**
-     * @param ObsidianLinkUrlGenerator $urlGenerator
-     */
-    public function __construct(ObsidianLinkUrlGenerator $urlGenerator)
+    public function __construct(UrlGenerator $urlGenerator)
     {
         $this->urlGenerator = $urlGenerator;
     }
