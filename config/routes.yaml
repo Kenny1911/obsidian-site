@@ -1,6 +1,6 @@
 app.content:
   path: /{path}
-  controller: 'App\Controller\ContentController'
+  controller: 'App\Controller\Content\Controller'
   methods: GET
   requirements:
     path: '.*'
