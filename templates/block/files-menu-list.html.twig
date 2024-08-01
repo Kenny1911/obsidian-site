@@ -1,0 +1,30 @@
+{# @var filesMenu \App\File\Menu\FileItem[] #}
+{% if filesMenu %}
+    <ul class="files-list">
+
+        {% for menuItem in filesMenu %}
+
+            {% if menuItem.file %}
+                {# @var menuItem \App\File\Menu\FileItem #}
+                <li class="files-list__item files-list__item--file {% if menuItem.isActive %}files-list__item--file-open{% endif %}">
+                    <a href="{{ menuItem.url }}" {% if 'OTHER' == menuItem.type.name %}target="_blank" {% endif %}>{{ menuItem.title }}</a>
+                </li>
+            {% endif %}
+
+            {% if menuItem.dir %}
+                {# @var menuItem \App\File\Menu\DirectoryItem #}
+                <li class="files-list__item files-list__item--directory {% if menuItem.isActive %}files-list__item--directory-open{% endif %}">
+                    <a href="javascript:void(0)"
+                       onclick="this.parentElement.classList.toggle('files-list__item--directory-open')"
+                    >
+                        {{ menuItem.title }}
+                    </a>
+
+                    {% if menuItem.children | length %}
+                        {% include 'block/files-menu-list.html.twig' with { filesMenu: menuItem.children } %}
+                    {% endif %}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endif %}

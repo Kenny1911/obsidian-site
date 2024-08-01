@@ -16,26 +16,9 @@
         {% endblock %}
     </head>
     <body class="content-page">
-        {#<div class="content-page__files-list">
-            <ul class="files-list">
-                <li class="files-list__item files-list__item--directory">
-                    <a href="javascript:void(0)"
-                       onclick="console.log(this.parentElement.classList.toggle('files-list__item--directory-open'))"
-                    >Папка</a>
-                    <ul class="files-list">
-                        <li class="files-list__item files-list__item--directory">
-                            <a href="#">Папка</a>
-                        </li>
-                        <li class="files-list__item files-list__item--file">
-                            <a href="#">Файл</a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="files-list__item files-list__item--file">
-                    <a href="#">Файл</a>
-                </li>
-            </ul>
-        </div>#}
+        <div class="content-page__files-list">
+            {% include 'block/files-menu-list.html.twig' with { filesMenu } %}
+        </div>
         <article class="content-page__article markdown-body">
             {% if title %}
                 <h1>{{ title }}</h1>
