@@ -115,6 +115,6 @@ final class Controller
             );
         }
 
-        return new BinaryFileResponse($file->getPath());
+        return new BinaryFileResponse($file->getPathname());
     }
 }
