@@ -37,12 +37,21 @@ services:
   app.markdown_parser:
     alias: 'cebe\markdown\Parser'
 
+  App\File\Menu\MainFilesMenuGenerator:
+    arguments:
+      - '@App\File\FileUtil'
+      - '@App\Routing\UrlGenerator'
+
+  App\File\Menu\FilesMenuGenerator:
+    alias: 'App\File\Menu\MainFilesMenuGenerator'
+
   App\Controller\Content\Controller:
     arguments:
       - '@App\File\FileUtil'
       - '@App\Routing\UrlGenerator'
       - '@app.markdown_parser'
       - '@twig'
+      - '@App\File\Menu\FilesMenuGenerator'
       - '%app.content.index_path%'
       - '%app.content.markdown_extensions%'
     autoconfigure: true
