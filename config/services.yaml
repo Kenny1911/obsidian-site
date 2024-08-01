@@ -4,34 +4,46 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+  app.content.route_name: 'app.content'
+  app.content.base_path: '%env(CONTENT_DIR)%'
+  app.content.index_path: '%env(CONTENT_INDEX)%'
+  app.content.markdown_extensions: ['md']
 
 services:
-  App\Obsidian\Markdown\SymfonyRouterObsidianLinkUrlGenerator:
+  App\File\FileUtil:
+    factory: ['App\File\FileUtil', 'createFromSettings']
+    arguments:
+      - '%app.content.base_path%'
+      - - '/.obsidian'
+        - '/commit'
+      - '%app.content.markdown_extensions%'
+
+
+  App\Routing\SymfonyRouterUrlGenerator:
     arguments:
       - '@router'
-      - 'app.content'
+      - '%app.content.route_name%'
 
-  App\Obsidian\Markdown\ObsidianLinkUrlGenerator:
-    alias: 'App\Obsidian\Markdown\SymfonyRouterObsidianLinkUrlGenerator'
+  App\Routing\UrlGenerator:
+    alias: 'App\Routing\SymfonyRouterUrlGenerator'
 
-  App\Obsidian\Markdown\ObsidianMarkdown:
+  App\Markdown\ObsidianMarkdown:
     arguments:
-      - '@App\Obsidian\Markdown\ObsidianLinkUrlGenerator'
+      - '@App\Routing\UrlGenerator'
 
   cebe\markdown\Parser:
-    alias: 'App\Obsidian\Markdown\ObsidianMarkdown'
+    alias: 'App\Markdown\ObsidianMarkdown'
 
   app.markdown_parser:
     alias: 'cebe\markdown\Parser'
 
-  App\Controller\ContentController:
+  App\Controller\Content\Controller:
     arguments:
-      - '%env(CONTENT_DIR)%'
-      - '%env(CONTENT_INDEX)%'
+      - '@App\File\FileUtil'
+      - '@App\Routing\UrlGenerator'
       - '@app.markdown_parser'
-      - '@router'
       - '@twig'
-      - - '/.obsidian'
-        - '/commit'
+      - '%app.content.index_path%'
+      - '%app.content.markdown_extensions%'
     autoconfigure: true
     public: true
