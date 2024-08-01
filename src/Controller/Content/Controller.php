@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Content;
 
 use App\File\FileType\FileType;
 use App\File\FileUtil;
@@ -17,7 +17,7 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
-final class ContentController
+final class Controller
 {
     private readonly FileUtil $fileUtil;
 
