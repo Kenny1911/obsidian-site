@@ -6,6 +6,7 @@ namespace App\Controller\Content;
 
 use App\File\FileType\FileType;
 use App\File\FileUtil;
+use App\File\Menu\FilesMenuGenerator;
 use App\Routing\UrlGenerator;
 use cebe\markdown\Parser;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -27,6 +28,8 @@ final class Controller
 
     private readonly Environment $twig;
 
+    private readonly FilesMenuGenerator $filesMenuGenerator;
+
     private readonly string $indexPath;
 
     /** @var list<string> */
@@ -40,6 +43,7 @@ final class Controller
         UrlGenerator $urlGenerator,
         Parser $markdownParser,
         Environment $twig,
+        FilesMenuGenerator $filesMenuGenerator,
         string $indexPath,
         array $markdownExtensions = ['md'],
     ) {
@@ -47,6 +51,7 @@ final class Controller
         $this->urlGenerator = $urlGenerator;
         $this->markdownParser = $markdownParser;
         $this->twig = $twig;
+        $this->filesMenuGenerator = $filesMenuGenerator;
         $this->indexPath = $this->fileUtil->normalizePath($indexPath);
         $this->markdownExtensions = array_values(array_filter($markdownExtensions));
     }
@@ -110,6 +115,7 @@ final class Controller
                     [
                         'title' => $file->getFilename(),
                         'content' => $this->markdownParser->parse($file->getContents()),
+                        'filesMenu' => $this->filesMenuGenerator->generate($path),
                     ]
                 )
             );
